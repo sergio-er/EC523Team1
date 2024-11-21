@@ -1,2 +1,4 @@
-# EC523Team1
-Super Resolution using GAN and Diffusion 
+# Image Super-Resolution using GAN & Diffusion
+Zhaowen Gu, Sergio Rodriguez, Nina Servan-Schreiber
+{petergu, sergioer, nsrvs}@bu.edu
+
