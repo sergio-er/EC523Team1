@@ -2,6 +2,8 @@
 Zhaowen Gu, Sergio Rodriguez, Nina Servan-Schreiber
 {petergu, sergioer, nsrvs}@bu.edu
 
+##### Not all models and files utilized are currently in this repository
+
 ### Task
 This project introduces a two-stage single-image super-resolution (SISR) framework using a CycleGAN for high-to-low degradation and a ResShift diffusion model for low-to-high super-resolution. The CycleGAN approach in the first stage enables realistic simulation of real-world image degradation (e.g., blur, noise) in an unpaired setting, ensuring that degraded images retain content integrity through cycle-consistency. In the second stage, the low-to-high diffusion model reconstructs high resolution (HR) images from the low resolution (LR) ones. Our goal is to assess whether the performance of the diffusion model can be improved by training on realistically degraded LR images.
 
