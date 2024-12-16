@@ -20,7 +20,15 @@ Baseline: We will compare our two-stage SISR framework with a single-stage SISR 
 
 ### Dataset ans Metrics
 Dataset: We use two real-world face datasets: CelebA for HR and Tinyface for LR. These two real-world datasets (unpaired) will be used to train the high-to-low CycleGAN network. We will then generate an artificial LR dataset from the real-world HR dataset using our trained CycleGAN network. These two datasets (paired) will be used to train the low-to-high ResShift diffusion model. We will test the performance of our diffusion model on both real-world and artificial LR images.  
-Metrics: We will use perceptual quality metrics such as Multi-Scale Image Quality Transformer (MUSIQ), Peak Signal-to-Noise Ratio (PSNR), Mean Opinion Score (MOS), and Structural Similarity Index Measure (SSIM).
+Metrics: We will use perceptual quality metrics such as Peak Signal-to-Noise Ratio (PSNR), and Frechet Inception Distance(FID), LPIPS, CLIPQA, Multi-Scale Image Quality Transformer (MUSIQ), 
+<img width="1072" alt="Screenshot 2024-12-16 at 15 45 49" src="https://github.com/user-attachments/assets/12ac01c1-5c94-49d0-9bab-0251ee3b0d3a" />
+
+### Results
+Degradation using different models:
+<img width="884" alt="Screenshot 2024-12-16 at 15 47 51" src="https://github.com/user-attachments/assets/c0def916-1c52-4daf-ad15-81701537bc86" />
+Image super resolution using different models:
+<img width="718" alt="Screenshot 2024-12-16 at 15 48 37" src="https://github.com/user-attachments/assets/2a3da58f-02a8-4a1b-befe-fd56d7cbf78f" />
+
 
 ### References
 1. C. Ledig, L. Theis, F. Huszár, J. Caballero, A. Cunningham, A. Acosta, A. Aitken, A. Tejani, J. Totz, Z. Wang, W. Shi. Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network. CVPR, 2017.
