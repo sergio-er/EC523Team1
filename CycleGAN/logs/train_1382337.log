@@ -1,0 +1,34 @@
+-------------------------------------------------------------------------------
+To activate the conda environment in a batch script or in a terminal run the
+following command. For interactive sessions in SCC OnDemand place this command
+in the "Pre-Launch Command" field.
+
+To load the PyTorch-based environment run:
+
+    conda activate fall-2024-pyt
+    
+To load the Tensorflow-based environment run:
+
+    conda activate fall-2024-tf
+
+To load the Jax-based environment run:
+
+    conda activate fall-2024-jax
+    
+For information on using or cloning this conda environment visit:
+
+https://www.bu.edu/tech/support/research/software-and-programming/common-languages/python/python-ml/academic-machine-learning-environment
+-------------------------------------------------------------------------------
+
+Job started at: Tue Dec  3 15:26:20 EST 2024
+Running on host: scc-216
+Working directory: /projectnb/ec523kb/projects/teams_Fall_2024/Team_1/nina/CycleGAN
+Job ID: 1382337
+Traceback (most recent call last):
+  File "/projectnb/ec523kb/projects/teams_Fall_2024/Team_1/nina/CycleGAN/train.py", line 25, in <module>
+    from util.visualizer import Visualizer
+  File "/projectnb/ec523kb/projects/teams_Fall_2024/Team_1/nina/CycleGAN/util/visualizer.py", line 6, in <module>
+    from . import util, html
+  File "/projectnb/ec523kb/projects/teams_Fall_2024/Team_1/nina/CycleGAN/util/html.py", line 1, in <module>
+    import dominate
+ModuleNotFoundError: No module named 'dominate'
