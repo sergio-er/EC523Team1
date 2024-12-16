@@ -1,0 +1,122 @@
+trainer:
+  target: new_trainer.TrainerDifIR
+
+model:
+  target: models.unet.UNetModelSwin
+  ckpt_path: ~
+  params:
+    image_size: 64  # High-resolution output size
+    in_channels: 3
+    model_channels: 160
+    out_channels: 3
+    attention_resolutions: [64,32,16,8]
+    dropout: 0
+    channel_mult: [1, 2, 2, 4]
+    num_res_blocks: [2, 2, 2, 2]
+    conv_resample: True
+    dims: 2
+    use_fp16: False
+    num_head_channels: 32
+    use_scale_shift_norm: True
+    resblock_updown: False
+    swin_depth: 2
+    swin_embed_dim: 192
+    window_size: 8
+    mlp_ratio: 4
+    cond_lq: True
+    lq_size: 16  # Low-resolution input size
+
+diffusion:
+  target: models.script_util.create_gaussian_diffusion
+  params:
+    sf: 4  # Scaling factor: 64 / 16
+    schedule_name: exponential
+    schedule_kwargs:
+      power: 0.3
+    etas_end: 0.99
+    steps: 15
+    min_noise_level: 0.04
+    kappa: 2.0
+    weighted_mse: False
+    predict_type: xstart
+    timestep_respacing: ~
+    scale_factor: 1.0
+    normalize_input: True
+    latent_flag: True
+
+autoencoder:
+  target: ldm.models.autoencoder.VQModelTorch
+  ckpt_path: weights/autoencoder_vq_f4.pth
+  use_fp16: True
+  params:
+    embed_dim: 3
+    n_embed: 8192
+    ddconfig:
+      double_z: False
+      z_channels: 3
+      resolution: 256
+      in_channels: 3
+      out_ch: 3
+      ch: 128
+      ch_mult:
+      - 1
+      - 2
+      - 4
+      num_res_blocks: 2
+      attn_resolutions: []
+      dropout: 0.0
+      padding_mode: zeros
+
+data:
+  train:
+    type: paired  # Using PairedData class
+    params:
+      dir_path: '/projectnb/ec523kb/projects/teams_Fall_2024/Team_1/nina/Inference/CycleGAN/LR'  # Path to 16x16 LR images
+      dir_path_extra: '/projectnb/ec523kb/projects/teams_Fall_2024/Team_1/nina/Inference/Originals/CelebA_50k'  # Path to 64x64 HR images
+      transform_type: 'default'
+      transform_kwargs:
+        mean: 0.5
+        std: 0.5
+      pch_size: 64
+      im_exts: ['png', 'jpg']  # Image file types
+      recursive: False
+
+  val:
+    type: paired  # Validation also uses PairedData
+    params:
+      dir_path: '/projectnb/ec523kb/projects/teams_Fall_2024/Team_1/nina/ResShift_CycleGAN/data/validation/LR'  # Path to 16x16 validation LR images
+      dir_path_extra: '/projectnb/ec523kb/projects/teams_Fall_2024/Team_1/nina/ResShift_CycleGAN/data/validation/HR'  # Path to 64x64 validation HR images
+      transform_type: 'default'
+      transform_kwargs:
+        mean: 0.5
+        std: 0.5
+      pch_size: 64
+      im_exts: ['png', 'jpg']
+      recursive: False
+
+train:
+  lr: 5e-5  # Learning rate
+  lr_min: 2e-5  # Minimum learning rate
+  warmup_iterations: 5000
+  batch: [32,4]  # Adjust batch sizes as needed
+  microbatch: 4
+  num_workers: 4
+  prefetch_factor: 2
+  weight_decay: 0
+  ema_rate: 0.999
+  iterations: 300000  # Total training iterations
+  save_freq: 10000  # Save model checkpoints every 10,000 iterations
+  log_freq: [200, 2000, 1]  # Log training and validation progress
+  local_logging: True
+  tf_logging: False
+  use_ema_val: True
+  val_freq: ${train.save_freq}
+  val_y_channel: True
+  val_resolution: 64
+  val_padding_mode: reflect
+  use_amp: True
+  seed: 123456
+  global_seeding: False
+  compile:
+    flag: False
+    mode: reduce-overhead
