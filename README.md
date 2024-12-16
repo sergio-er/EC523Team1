@@ -32,6 +32,9 @@ Degradation using different models:
 Image super resolution using different models:
 <img width="718" alt="Screenshot 2024-12-16 at 15 48 37" src="https://github.com/user-attachments/assets/2a3da58f-02a8-4a1b-befe-fd56d7cbf78f" />
 
+Image results from different models and original data (1.2GB zip file, 1TB unziped):
+https://drive.google.com/file/d/1vtuGruGKnSqFNqFAz5ErN8yw1THvxHIf/view?usp=sharing
+
 
 ### References
 1. C. Ledig, L. Theis, F. Huszár, J. Caballero, A. Cunningham, A. Acosta, A. Aitken, A. Tejani, J. Totz, Z. Wang, W. Shi. Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network. CVPR, 2017.
