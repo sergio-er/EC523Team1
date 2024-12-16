@@ -1,0 +1,181 @@
+trainer:
+  target: trainer.TrainerDifIRLPIPS  # Trainer class that uses LPIPS perceptual loss alongside MSE
+
+autoencoder:
+  target: ldm.models.autoencoder.VQModelTorch  # Vector quantized autoencoder model
+  ckpt_path: weights/autoencoder_vq_f4.pth    # Pretrained weights path
+  # ckpt_path: /projectnb/ec523kb/projects/teams_Fall_2024/Team_1/Sergio/ResShift/logs/data_50k/2024-11-28-14-47/ema_ckpts/ema_model_350000.pth
+  use_fp16: True                              # Use half precision for memory efficiency
+  params:
+    embed_dim: 3                              # Dimension of embedding space
+    n_embed: 8192                             # Number of embedding vectors
+    ddconfig:
+      double_z: False                         # Whether to double the latent dimensions
+      z_channels: 3                           # Number of channels in latent space
+      resolution: 64                          # Input resolution (should match gt_size)
+      in_channels: 3                          # RGB input channels
+      out_ch: 3                               # RGB output channels
+      ch: 128                                 # Base channel multiplier
+      ch_mult:                                # Channel multipliers at each resolution
+      - 1                                     # Reduced from original due to smaller input
+      - 2
+      - 4
+      num_res_blocks: 2                       # Number of residual blocks per resolution
+      attn_resolutions: []                    # No self-attention layers needed for small images
+      dropout: 0.0                            # No dropout needed for this task
+      padding_mode: zeros                     # Standard padding mode
+
+model:
+  target: models.unet.UNetModelSwin          # Swin Transformer-based U-Net model
+  ckpt_path: ~                               # No pretrained weights
+  params:
+    image_size: 16                           # Size of LR input (reduced from 64)
+    in_channels: 3                           # RGB input
+    model_channels: 128                      # Base channel multiplier (reduced from 160)
+    out_channels: ${autoencoder.params.embed_dim}  # Match autoencoder embedding dim
+    attention_resolutions: [16,8,4,2]        # Add attention at these resolutions (adjusted for smaller size)
+    dropout: 0                               # No dropout needed
+    channel_mult: [1, 2, 2, 4]               # Channel multipliers (kept same despite size reduction)
+    num_res_blocks: [1, 1, 1, 1]             # ResBlocks per resolution (reduced from [2,2,2,2])
+    conv_resample: True                      # Use convolutions for up/downsampling
+    dims: 2                                  # 2D images
+    use_fp16: False                          # Full precision for stability
+    num_head_channels: 16                    # Attention heads (reduced from 32)
+    use_scale_shift_norm: True               # Normalization type
+    resblock_updown: False                   # Simple up/down sampling
+    swin_depth: 2                            # Swin transformer depth (keep as is)
+    swin_embed_dim: 96                       # Embedding dimension (reduced from 192)
+    window_size: 4                           # Swin window size (reduced from 8)
+    mlp_ratio: 4                             # MLP ratio in Swin blocks
+    cond_lq: True                            # Condition on LR input
+    lq_size: 16                              # LR input size (reduced from 64)
+
+diffusion:
+  target: models.script_util.create_gaussian_diffusion
+  params:
+    sf: 4                                    # Scale factor between LR and HR
+    schedule_name: exponential               # Noise schedule type
+    schedule_kwargs:
+      power: 0.3                             # Controls schedule shape
+    etas_end: 0.99                           # Final noise level
+    steps: 4                                 # Number of diffusion steps (keep small for efficiency)
+    min_noise_level: 0.2                     # Minimum noise to add
+    kappa: 2.0                               # Noise scaling factor
+    weighted_mse: False                      # Use standard MSE loss
+    predict_type: xstart                     # Predict clean image directly
+    timestep_respacing: ~                    # No custom timestep spacing
+    scale_factor: 1.0                        # No additional scaling
+    normalize_input: True                    # Normalize inputs to [-1,1]
+    latent_flag: True                        # Work in latent space
+
+degradation:
+  sf: 4                                      # Scale factor (4x super-resolution)
+  # First degradation process
+  resize_prob: [0.2, 0.7, 0.1]               # Probability of up/down/keep resizing
+  resize_range: [0.15, 1.5]                  # Range for random resizing
+  gaussian_noise_prob: 0.5                   # Probability of adding Gaussian noise
+  noise_range: [1, 30]                       # Noise standard deviation range
+  poisson_scale_range: [0.05, 3.0]           # Poisson noise scaling
+  gray_noise_prob: 0.4                       # Probability of grayscale noise
+  jpeg_range: [30, 95]                       # JPEG quality range
+
+  # Second degradation process (more mild than first)
+  second_order_prob: 0.5                     # Probability of second degradation
+  second_blur_prob: 0.8                      # Blur probability in second degradation
+  resize_prob2: [0.3, 0.4, 0.3]              # More balanced resize probabilities
+  resize_range2: [0.3, 1.2]                  # More conservative resize range
+  gaussian_noise_prob2: 0.5                  # Same noise probability
+  noise_range2: [1, 25]                      # Slightly lower noise range
+  poisson_scale_range2: [0.05, 2.5]          # Lower Poisson noise
+  gray_noise_prob2: 0.4                      # Same grayscale probability
+  jpeg_range2: [30, 95]                      # Same JPEG range
+
+  gt_size: 64                                # HR image size (reduced from 256)
+  resize_back: False                         # Don't resize back after degradation
+  use_sharp: False                           # Don't apply sharpening
+
+data:
+  train:
+    type: realesrgan                         # Use RealESRGAN degradation pipeline
+    params:
+      dir_paths: ['data/training']           # Training data directory
+      txt_file_path: []                      # No additional path list
+      im_exts: ['png', 'jpg', 'jpeg']        # Supported image extensions
+      io_backend:
+        type: disk                           # Load from disk
+      # First kernel settings  
+      blur_kernel_size: 15                   # Blur kernel size (reduced from 21)
+      kernel_list: ['iso', 'aniso', 'generalized_iso', 'generalized_aniso', 'plateau_iso', 'plateau_aniso']
+      kernel_prob: [0.45, 0.25, 0.12, 0.03, 0.12, 0.03]  # Kernel probabilities
+      sinc_prob: 0.1                         # Sinc filter probability
+      blur_sigma: [0.2, 3.0]                 # Blur sigma range
+      betag_range: [0.5, 4.0]                # Generalized kernel beta range
+      betap_range: [1, 2.0]                  # Plateau kernel beta range
+
+      # Second kernel settings (more mild)
+      blur_kernel_size2: 15                  # Smaller kernel for second blur
+      kernel_list2: ['iso', 'aniso', 'generalized_iso', 'generalized_aniso', 'plateau_iso', 'plateau_aniso']
+      kernel_prob2: [0.45, 0.25, 0.12, 0.03, 0.12, 0.03]
+      sinc_prob2: 0.1
+      blur_sigma2: [0.2, 1.5]                # Lower blur range
+      betag_range2: [0.5, 4.0]
+      betap_range2: [1, 2.0]
+
+      final_sinc_prob: 0.8                   # High probability of final sinc filter
+
+      gt_size: ${degradation.gt_size}        # Match degradation settings
+      crop_pad_size: 128                     # Padding for random crops (reduced from 300)
+      use_hflip: True                        # Horizontal flips for augmentation
+      use_rot: False                         # No rotation augmentation
+      rescale_gt: True                       # Rescale ground truth to [-1,1]
+  val:
+    type: base                               # Basic validation dataset
+    params:
+      dir_path: 'data/testing/LR'            # LR test images
+      im_exts: 'jpg'                         # Test image format
+      transform_type: default                # Standard transforms
+      transform_kwargs:
+          mean: 0.5                          # Normalize to [-1,1]
+          std: 0.5
+      extra_dir_path: 'data/testing/HR'      # HR test images
+      extra_transform_type: default
+      extra_transform_kwargs:
+          mean: 0.5
+          std: 0.5
+      recursive: False                        # Don't search subdirectories
+
+train:
+  # Learning rate settings
+  lr: 5e-5                                   # Initial learning rate (could increase to 1e-4)
+  lr_min: 2e-5                               # Minimum learning rate
+  lr_schedule: cosin                         # Cosine learning rate decay
+  warmup_iterations: 500                     # Shorter warmup for smaller dataset
+  # Dataloader settings
+  batch: [16, 8]                             # Batch sizes for training/validation
+  microbatch: 4                              # Gradient accumulation batch size
+  num_workers: 6                             # Data loading workers
+  prefetch_factor: 2                         # Prefetch factor for data loading
+  # Optimization settings
+  weight_decay: 0                            # No weight decay needed
+  ema_rate: 0.999                            # EMA model update rate
+  iterations: 350000                         # Total iterations (reduced for smaller dataset)
+  # Logging settings
+  save_freq: 10000                            # Checkpoint frequency
+  log_freq: [200, 1000, 1]                   # Logging frequencies
+  loss_coef: [1.0, 1.0]                      # MSE and LPIPS loss weights
+  local_logging: True                        # Save local logs
+  tf_logging: False                          # No tensorboard
+  # Validation settings
+  use_ema_val: True                          # Use EMA model for validation
+  val_freq: ${train.save_freq}               # Validate when saving
+  val_y_channel: True                        # Evaluate on Y channel
+  val_resolution: ${model.params.lq_size}    # Match model input size
+  val_padding_mode: reflect                  # Padding for validation
+  # Training settings
+  use_amp: True                              # Use mixed precision
+  seed: 123456                               # Random seed
+  global_seeding: False                      # Don't set global seed
+  # Compilation settings
+  compile:
+    flag: False                              # Don't use torch.compile
+    mode: reduce-overhead                    # Compilation mode if used
