@@ -1,0 +1,9 @@
+========================LOAD DATA============================
+Loader created: 53254 batches
+qt.qpa.xcb: could not connect to display 
+qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "/projectnb/ec523kb/students/sergioer/.conda/envs/finalproject/lib/python3.8/site-packages/cv2/qt/plugins" even though it was found.
+This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+
+Available platform plugins are: xcb.
+
+/var/spool/sge/scc-202/job_scripts/1516416: line 14: 111274 Aborted                 python generate_low_res.py
